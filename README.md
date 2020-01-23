@@ -1,0 +1,120 @@
+title: 'Reproducible-Research : Course Project 1'
+output: html_document
+---
+
+
+## Loading and reading the data
+
+file.exists("activity.csv")
+
+MyData <- read.csv(file="activity.csv", header=TRUE, sep=",")
+
+head(MyData)
+names(MyData)
+str(MyData)
+dim(MyData)
+class(MyData)
+
+
+
+## What is mean total number of steps taken per day?
+
+# total number of steps taken per day
+TotalDailySteps<-with(MyData, tapply(steps, date, sum, na.rm=TRUE))
+
+#histogram of total steps taken each day
+hist(TotalDailySteps, col = "blue")
+
+#mean and median of the total number of steps taken per day
+mean_steps <- mean(steps_per_day[,2])
+median_steps <- median(steps_per_day[,2])
+
+
+
+## What is the average daily activity pattern?
+
+#time series plot of the 5-minute interval and the average number of steps taken
+
+IntervalData <- aggregate(steps ~ interval, MyData, mean)
+
+plot(
+IntervalData, type = "l", xlab = "Interval [5 mins]",
+ylab = "Average Daily Steps", main = "Average Number of Steps"
+)
+
+IntervalData$interval[which.max(IntervalData$steps)]
+
+
+## Input the missing values
+
+# total number of missing values in the dataset
+
+NAcount<-sum(is.na(MyData$steps))
+
+#filling in all of the missing values in the dataset
+mean(MyData$steps, na.rm = T)
+
+#new dataset that is equal to the original dataset but with the missing data filled in
+
+MyData2<- MyData
+MyData2$steps[is.na(MyData2$steps)] <- mean(MyData2$steps, na.rm = T)
+colSums(is.na(MyData2))
+
+
+## histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day
+
+MyData3 <- tapply(MyData2$steps, MyData2$date, sum)
+
+library(reshape2)
+MyData4 <- melt(MyData3)
+names(MyData4) <- c("Date", "SumofSteps")
+head(MyData4)
+
+hist(MyData4$SumofSteps, main = "Histogram of Total Number of Steps per Day on  Impute Value", 
+    xlab = "Total Number of Steps per Day", ylab = "Frequency", col = "blue", 
+    breaks = 30)
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+# Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day
+
+MyData2$RealDate <- as.Date(MyData2$date, format = "%Y-%m-%d")
+MyData2$weekday <- weekdays(MyData2$RealDate)
+MyData2$DayType <- ifelse(MyData2$weekday=='Saturday' | MyData2$weekday=='Sunday', 'weekend','weekday')
+
+
+# Make a panel plot containing a time series plot of the 5-minute interval and the average number of steps taken, averaged across all weekday days or weekend days.
+
+
+#Calculate average steps per interval for weekends
+
+StepsPerInterval.weekend <- tapply(MyData2[MyData2$day == "weekend" ,]$steps, MyData2[MyData2$day == "weekend" ,]$interval, mean, na.rm = TRUE)
+
+#Calculate average steps per interval for weekdays
+
+StepsPerInterval.weekday <- tapply(MyData2[MyData2$day == "weekday" ,]$steps, MyData2[MyData2$day == "weekday" ,]$interval, mean, na.rm = TRUE)
+
+#Set a 2 panel plot
+
+par(mfrow=c(1,2))
+
+# Plot weekday activity
+
+plot(as.numeric(names(StepsPerInterval.weekday)), 
+     StepsPerInterval.weekday, 
+     xlab = "Interval", 
+     ylab = "Steps", 
+     main = "MyData2 (Weekdays)", 
+     type = "l")
+     
+     
+# Plot weekend activity
+
+plot(as.numeric(names(StepsPerInterval.weekend)), 
+     StepsPerInterval.weekend, 
+     xlab = "Interval", 
+     ylab = "Steps", 
+     main = "MyData2 (Weekends)", 
+     type = "l")
+     
